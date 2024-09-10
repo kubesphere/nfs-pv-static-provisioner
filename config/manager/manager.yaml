@@ -63,7 +63,7 @@ spec:
         args:
           - --leader-elect
           - --health-probe-bind-address=:8081
-        image: kubesphere/nfs-pv-static-provisioner:latest
+        image: controller:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
