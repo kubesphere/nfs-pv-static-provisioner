@@ -142,12 +142,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	recorder := mgr.GetEventRecorderFor("nfs-pv-static-provisioner")
+
 	if err = (&controller.PersistentVolumeClaimReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("nfs-pvc-controller"),
+		Recorder: recorder,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "PersistentVolumeClaim")
+		os.Exit(1)
+	}
+	if err = (&controller.PersistentVolumeReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: recorder,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "PersistentVolume")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

@@ -21,6 +21,20 @@ const (
 	AnnotationReclaimPolicy      = "storage.kubesphere.io/reclaim-policy"
 )
 
+type NFSPV corev1.PersistentVolume
+
+func (p NFSPV) IsStaticProvision() bool {
+	sps, ok := p.Annotations[AnnotationNFSStaticProvision]
+	sp, err := strconv.ParseBool(sps)
+	return ok && err == nil && sp
+}
+
+func (p NFSPV) NeedDelete() bool {
+	return p.IsStaticProvision() &&
+		p.Spec.PersistentVolumeReclaimPolicy == corev1.PersistentVolumeReclaimDelete &&
+		(p.Status.Phase == corev1.VolumeFailed || p.Status.Phase == corev1.VolumeReleased)
+}
+
 type NFSPVC corev1.PersistentVolumeClaim
 
 func (p NFSPVC) IsStaticProvision() bool {
@@ -63,8 +77,12 @@ func (p NFSPVC) ParsePV() (*corev1.PersistentVolume, error) {
 		corev1.PersistentVolumeReclaimDelete,
 	}
 	reclaimPolicyStr, ok := p.Annotations[AnnotationReclaimPolicy]
-	if ok && !slices.Contains(validReclaimPolicies, corev1.PersistentVolumeReclaimPolicy(reclaimPolicyStr)) {
-		return nil, newAnnotationInvalidError(AnnotationReclaimPolicy)
+	if ok {
+		if slices.Contains(validReclaimPolicies, corev1.PersistentVolumeReclaimPolicy(reclaimPolicyStr)) {
+			reclaimPolicy = corev1.PersistentVolumeReclaimPolicy(reclaimPolicyStr)
+		} else {
+			return nil, newAnnotationInvalidError(AnnotationReclaimPolicy)
+		}
 	}
 
 	var readonly bool
@@ -93,6 +111,9 @@ func (p NFSPVC) ParsePV() (*corev1.PersistentVolume, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			Annotations: map[string]string{
+				AnnotationNFSStaticProvision: "true",
+			},
 		},
 		Spec: corev1.PersistentVolumeSpec{
 			Capacity:                      p.Spec.Resources.Requests,

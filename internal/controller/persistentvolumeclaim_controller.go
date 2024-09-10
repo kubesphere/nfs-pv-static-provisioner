@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -52,7 +53,7 @@ type PersistentVolumeClaimReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *PersistentVolumeClaimReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithValues("pvc", req.NamespacedName.String())
+	logger := log.FromContext(ctx)
 
 	pvc := &corev1.PersistentVolumeClaim{}
 	err := r.Get(ctx, req.NamespacedName, pvc)
@@ -62,11 +63,6 @@ func (r *PersistentVolumeClaimReconciler) Reconcile(ctx context.Context, req ctr
 
 	if !pvc.DeletionTimestamp.IsZero() {
 		logger.V(4).Info("pvc is being deleted")
-		return ctrl.Result{}, nil
-	}
-
-	if pvc.Status.Phase == corev1.ClaimBound {
-		logger.V(4).Info("pvc is already bound")
 		return ctrl.Result{}, nil
 	}
 
@@ -84,9 +80,7 @@ func (r *PersistentVolumeClaimReconciler) Reconcile(ctx context.Context, req ctr
 
 	var pv *corev1.PersistentVolume
 	pv, err = nfsPVC.ParsePV()
-	if err == nil {
-		r.Recorder.Eventf(pvc, corev1.EventTypeNormal, "PVParsed", "parsed pv from pvc successfully")
-	} else {
+	if err != nil {
 		r.Recorder.Eventf(pvc, corev1.EventTypeWarning, "ParsePVFailed", "failed to parse pv from pvc, error: %s", err.Error())
 		return ctrl.Result{}, err
 	}
@@ -103,7 +97,17 @@ func (r *PersistentVolumeClaimReconciler) Reconcile(ctx context.Context, req ctr
 	} else {
 		pv2 := &corev1.PersistentVolume{}
 		err = r.Client.Get(ctx, types.NamespacedName{Name: pvc.Spec.VolumeName}, pv2)
-		if err != nil {
+		if err == nil {
+			needUpdate := r.mergePV(pv2, pv)
+			if needUpdate {
+				err = r.Client.Update(ctx, pv2)
+				if err == nil {
+					r.Recorder.Eventf(pvc, corev1.EventTypeNormal, "PVUpdated", "pv %s updated successfully", pv2.Name)
+				} else {
+					r.Recorder.Eventf(pvc, corev1.EventTypeWarning, "UpdatePVFailed", "failed to update pv %s, error: %s", pv2.Name, err.Error())
+				}
+			}
+		} else {
 			if apierrors.IsNotFound(err) {
 				err = r.Client.Create(ctx, pv)
 				if err == nil {
@@ -118,6 +122,15 @@ func (r *PersistentVolumeClaimReconciler) Reconcile(ctx context.Context, req ctr
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+// mergePV merges pv with the parsedPV and return if pv needs updating.
+// Which pv's property can be changed after bound by changing the pvc's spec or annotations?
+// - PersistentVolumeReclaimPolicy
+func (r *PersistentVolumeClaimReconciler) mergePV(pv *corev1.PersistentVolume, parsedPV *corev1.PersistentVolume) bool {
+	pvCopy := pv.DeepCopy()
+	pv.Spec.PersistentVolumeReclaimPolicy = parsedPV.Spec.PersistentVolumeReclaimPolicy
+	return !reflect.DeepEqual(pvCopy.Spec, pv.Spec)
 }
 
 // SetupWithManager sets up the controller with the Manager.
