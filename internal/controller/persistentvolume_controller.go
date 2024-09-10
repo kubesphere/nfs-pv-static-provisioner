@@ -36,6 +36,7 @@ type PersistentVolumeReconciler struct {
 	Recorder record.EventRecorder
 }
 
+// +kubebuilder:rbac:groups=core,resources=events,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes/finalizers,verbs=update

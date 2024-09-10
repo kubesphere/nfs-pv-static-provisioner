@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    "storage.kubesphere.io/nfs-static-provision": "true"
+    "storage.kubesphere.io/nfs-server": "example.nfs.server"
+    "storage.kubesphere.io/nfs-path": "/a/b/c"
+  name: pvc-nfs
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+  volumeMode: Filesystem
