@@ -70,7 +70,7 @@ func (p NFSPVC) ParsePV() (*corev1.PersistentVolume, error) {
 		}
 	}
 
-	reclaimPolicy := corev1.PersistentVolumeReclaimRetain
+	reclaimPolicy := corev1.PersistentVolumeReclaimDelete
 	validReclaimPolicies := []corev1.PersistentVolumeReclaimPolicy{
 		corev1.PersistentVolumeReclaimRetain,
 		corev1.PersistentVolumeReclaimRecycle,

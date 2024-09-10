@@ -65,8 +65,10 @@ func (r *PersistentVolumeReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	nfspv := NFSPV(*pv)
 	if nfspv.NeedDelete() {
 		err = r.Client.Delete(ctx, pv)
-		logger.Error(err, "pv deleted")
-		if err != nil {
+		if err == nil {
+			logger.Info("pv deleted successfully")
+		} else {
+			logger.Error(err, "failed to delete pv")
 			r.Recorder.Eventf(pv, corev1.EventTypeWarning, "DeletePVFailed", "failed to delete pv, error: %s", err.Error())
 		}
 		return ctrl.Result{}, err
