@@ -1,4 +1,4 @@
-# nfs-PV-static-provisioner
+# nfs-pv-static-provisioner
 A NFS persistent volume static provisioner, which allows you to quickly bind an existing NFS volume to PVC. 
 
 **This provisioner will NOT provision volumes on NFS server when you create a PVC.** If you are looking for a dynamic provisioner of NFS, please consider other projects, like [this](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner).
