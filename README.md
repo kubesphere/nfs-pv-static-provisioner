@@ -6,14 +6,15 @@ A NFS persistent volume static provisioner, which allows you to quickly bind an 
 ## Description
 The provisioner listens PVC CREATE and UPDATE events, when the PVC has demanded annotations, the provisioner will create/update a NFS PV and bind it with the PVC automatically.
 
-| Annotation                                 | Required | Default Value | Explanation                                                  | Example Values                          |
-|--------------------------------------------|----------|---------------|--------------------------------------------------------------|-----------------------------------------|
-| storage.kubesphere.io/nfs-static-provision | Y        | "false"       | must set to "true" in order to use this provisioner          | "true"                                  |
-| storage.kubesphere.io/nfs-server           | Y        | ""            | nfs server hostname or IP address (PV.spec.nfs.server)       | "example.nfs.server.com", "192.168.0.5" |
-| storage.kubesphere.io/nfs-path             | Y        | ""            | nfs volume absolute path (PV.spec.nfs.path)                  | "/exports/volume1"                      |
-| storage.kubesphere.io/nfs-readonly         | N        | "false"       | whether the volume is read-only (PV.spec.nfs.readOnly)       | "false", "true"                         |
-| storage.kubesphere.io/reclaim-policy*      | N        | "Delete"      | reclaim policy of PV (PV.spec.persistentVolumeReclaimPolicy) | "Delete", "Retain"                      |
-| storage.kubesphere.io/mount-options        | N        | ""            | mount options of PV (PV.spec.mountOptions)                   | `"[\"nfsvers=3\",\"nolock\",\"hard\"]"` |
+| Annotation                                 | Required | Default Value        | Explanation                                                  | Example Values                          |
+|--------------------------------------------|----------|----------------------|--------------------------------------------------------------|-----------------------------------------|
+| storage.kubesphere.io/nfs-static-provision | Y        | "false"              | must set to "true" in order to use this provisioner          | "true"                                  |
+| storage.kubesphere.io/nfs-server           | Y        | ""                   | nfs server hostname or IP address (PV.spec.nfs.server)       | "example.nfs.server.com", "192.168.0.5" |
+| storage.kubesphere.io/nfs-path             | Y        | ""                   | nfs volume absolute path (PV.spec.nfs.path)                  | "/exports/volume1"                      |
+| storage.kubesphere.io/nfs-readonly         | N        | "false"              | whether the volume is read-only (PV.spec.nfs.readOnly)       | "false", "true"                         |
+| storage.kubesphere.io/reclaim-policy*      | N        | "Delete"             | reclaim policy of PV (PV.spec.persistentVolumeReclaimPolicy) | "Delete", "Retain"                      |
+| storage.kubesphere.io/mount-options        | N        | ""                   | mount options of PV (PV.spec.mountOptions)                   | `"[\"nfsvers=3\",\"nolock\",\"hard\"]"` |
+| storage.kubesphere.io/pv-name              | N        | "pvc-${random uuid}" | PV name                                                      | "nfs-pv-1"                              |
 
 - *When reclaim policy is "Delete", the PV will be deleted when the PVC is deleted. However, this only affects the PV resource in k8s cluster, the real backend volume on NFS server still exists.
 

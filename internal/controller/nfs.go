@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	AnnotationPVName             = "storage.kubesphere.io/pv-name"
 	AnnotationNFSStaticProvision = "storage.kubesphere.io/nfs-static-provision"
 	AnnotationNFSServer          = "storage.kubesphere.io/nfs-server"
 	AnnotationNFSPath            = "storage.kubesphere.io/nfs-path"
@@ -94,8 +95,8 @@ func (p NFSPVC) ParsePV() (*corev1.PersistentVolume, error) {
 		}
 	}
 
-	name := p.Spec.VolumeName
-	if name == "" {
+	name, ok := p.Annotations[AnnotationPVName]
+	if !ok || name == "" {
 		name = fmt.Sprintf("pvc-%s", uuid.NewUUID())
 	}
 
