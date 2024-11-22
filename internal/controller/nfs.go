@@ -95,9 +95,12 @@ func (p NFSPVC) ParsePV() (*corev1.PersistentVolume, error) {
 		}
 	}
 
-	name, ok := p.Annotations[AnnotationPVName]
-	if !ok || name == "" {
-		name = fmt.Sprintf("pvc-%s", uuid.NewUUID())
+	name := p.Spec.VolumeName
+	if name == "" {
+		name, ok = p.Annotations[AnnotationPVName]
+		if !ok || name == "" {
+			name = fmt.Sprintf("pvc-%s", uuid.NewUUID())
+		}
 	}
 
 	var storageClassName string

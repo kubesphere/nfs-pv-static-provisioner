@@ -67,6 +67,11 @@ func (r *PersistentVolumeClaimReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, nil
 	}
 
+	if pvc.Status.Phase == corev1.ClaimBound {
+		logger.V(4).Info("pvc already bound")
+		return ctrl.Result{}, nil
+	}
+
 	if pvc.Spec.StorageClassName == nil || *pvc.Spec.StorageClassName != "" {
 		logger.V(4).Info("pvc's StorageClassName is not empty string which means pv is not static provision")
 		return ctrl.Result{}, nil
@@ -115,6 +120,10 @@ func (r *PersistentVolumeClaimReconciler) Reconcile(ctx context.Context, req ctr
 					r.Recorder.Eventf(pvc, corev1.EventTypeNormal, "PVCreated", "pv %s created successfully", pv.Name)
 				} else {
 					r.Recorder.Eventf(pvc, corev1.EventTypeWarning, "CreatePVFailed", "failed to create pv %s, error: %s", pv.Name, err.Error())
+				}
+				if err == nil {
+					pvc.Spec.VolumeName = pv.Name
+					err = r.Client.Update(ctx, pvc)
 				}
 				return ctrl.Result{}, err
 			} else {
